@@ -6,5 +6,5 @@ export { normalizeManualTags } from "@/lib/post-tags"
 export async function syncPostTaxonomy(postId: string, title: string, content: string, manualTags?: string[]) {
   const normalizedContent = getAllPostContentText(content)
 
-  await replacePostTaxonomy(postId, extractSummaryFromContent(normalizedContent) || title, manualTags)
+  return replacePostTaxonomy(postId, extractSummaryFromContent(normalizedContent) || title, manualTags)
 }

@@ -22,15 +22,33 @@ import { revalidateHomeSidebarStatsCache } from "@/lib/home-sidebar-stats"
 import { ensureCanManageBoard, ensureCanManagePost, getAvailablePinScopes } from "@/lib/moderator-permissions"
 import { createSystemNotification } from "@/lib/notification-writes"
 import { activatePostAuctionForPost } from "@/lib/post-auctions"
-import { revalidatePostDetailCache } from "@/lib/post-detail-cache"
 import { recordApprovedPostTaskEvent } from "@/lib/task-center-service"
-import { expireTaxonomyCacheImmediately } from "@/lib/taxonomy-cache"
+import { revalidateUpdatedPostMutation } from "@/lib/content-mutation-revalidation"
+
+type ManagedPostForRevalidation = Awaited<ReturnType<typeof ensureCanManagePost>>
+
+function revalidateAdminPostMutation(post: ManagedPostForRevalidation, options: {
+  boardSlug?: string | null
+  previousBoardSlug?: string | null
+  zoneSlug?: string | null
+  previousZoneSlug?: string | null
+} = {}) {
+  revalidateUpdatedPostMutation({
+    postId: post.id,
+    postSlug: post.slug,
+    boardSlug: options.boardSlug ?? post.board.slug,
+    previousBoardSlug: options.previousBoardSlug,
+    zoneSlug: options.zoneSlug ?? post.board.zone?.slug,
+    previousZoneSlug: options.previousZoneSlug,
+    authorId: post.authorId,
+  })
+}
 
 export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
   "post.feature": defineAdminAction({ targetType: "POST", revalidatePaths: ["/", "/admin"], buildDetail: () => "管理员切换推荐状态" }, async (context) => {
     const post = await ensureCanManagePost(context.actor, context.targetId)
     await updatePostFeatureState(context.targetId, !post.isFeatured)
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
+    revalidateAdminPostMutation(post)
     await writeAdminActionLog(context, adminPostActionHandlers["post.feature"].metadata)
     return { message: post.isFeatured ? "已取消推荐" : "已设为推荐" }
   }),
@@ -46,7 +64,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
     }
     const nextPinned = normalizedScope !== "NONE"
     await updatePostPinState(context.targetId, nextPinned, normalizedScope)
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
+    revalidateAdminPostMutation(post)
     await writeAdminActionLog(context, adminPostActionHandlers["post.pin"].metadata)
     const scopeLabel = normalizedScope === "GLOBAL" ? "全局置顶" : normalizedScope === "ZONE" ? "分区置顶" : normalizedScope === "BOARD" ? "节点置顶" : "取消置顶"
     return { message: scopeLabel }
@@ -57,8 +75,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
     const reason = context.message || "管理员下线帖子"
     await updatePostStatus(context.targetId, PostStatus.OFFLINE, reason)
     revalidateHomeSidebarStatsCache()
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post)
     await executeAddonActionHook("post.status.changed.after", {
       postId: context.targetId,
       editorId: String(context.adminUserId),
@@ -94,8 +111,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
     })
     await deletePostPermanently(context.targetId)
     revalidateHomeSidebarStatsCache()
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post)
     await executeAddonActionHook("post.delete.after", {
       postId: context.targetId,
       editorId: String(context.adminUserId),
@@ -112,8 +128,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
       await activatePostAuctionForPost(post.id)
     }
     revalidateHomeSidebarStatsCache()
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post)
     await executeAddonActionHook("post.status.changed.after", {
       postId: context.targetId,
       editorId: String(context.adminUserId),
@@ -129,8 +144,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
     const previousStatus = post.status as AddonReadablePostStatus
     await updatePostStatus(context.targetId, PostStatus.LOCKED)
     revalidateHomeSidebarStatsCache()
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post)
     await executeAddonActionHook("post.status.changed.after", {
       postId: context.targetId,
       editorId: String(context.adminUserId),
@@ -148,8 +162,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
       await activatePostAuctionForPost(post.id)
     }
     revalidateHomeSidebarStatsCache()
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post)
     await executeAddonActionHook("post.status.changed.after", {
       postId: context.targetId,
       editorId: String(context.adminUserId),
@@ -169,8 +182,12 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
     await ensureCanManageBoard(context.actor, targetBoard.id)
     if (post.boardId === targetBoard.id) apiError(400, "帖子已在当前节点，无需移动")
     await movePostToBoard(context.targetId, targetBoard.id)
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post, {
+      boardSlug: targetBoard.slug,
+      previousBoardSlug: post.board.slug,
+      zoneSlug: targetBoard.zone?.slug,
+      previousZoneSlug: post.board.zone?.slug,
+    })
     await writeAdminActionLog(context, adminPostActionHandlers["post.moveBoard"].metadata)
     const postId = context.targetId
 
@@ -190,8 +207,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
       await activatePostAuctionForPost(post.id)
     }
     revalidateHomeSidebarStatsCache()
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post)
     await executeAddonActionHook("post.status.changed.after", {
       postId: context.targetId,
       editorId: String(context.adminUserId),
@@ -232,8 +248,7 @@ export const adminPostActionHandlers: Record<string, AdminActionDefinition> = {
     const previousStatus = post.status as AddonReadablePostStatus
     await updatePostStatus(context.targetId, PostStatus.OFFLINE, context.message)
     revalidateHomeSidebarStatsCache()
-    revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-    expireTaxonomyCacheImmediately()
+    revalidateAdminPostMutation(post)
     await executeAddonActionHook("post.status.changed.after", {
       postId: context.targetId,
       editorId: String(context.adminUserId),

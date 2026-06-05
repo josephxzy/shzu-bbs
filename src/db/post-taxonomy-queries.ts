@@ -45,10 +45,17 @@ async function syncTagPostCounts(tx: Prisma.TransactionClient, tagIds: string[])
 }
 
 export async function replacePostTaxonomy(postId: string, summary: string, manualTags?: string[]) {
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const existingRelations = await tx.postTag.findMany({
       where: { postId },
-      select: { tagId: true },
+      select: {
+        tagId: true,
+        tag: {
+          select: {
+            slug: true,
+          },
+        },
+      },
     })
 
     const normalizedTags = buildNormalizedTags(manualTags)
@@ -90,6 +97,13 @@ export async function replacePostTaxonomy(postId: string, summary: string, manua
       ...existingRelations.map((relation) => relation.tagId),
       ...syncedTags.map((tag) => tag.id),
     ])
+
+    return {
+      affectedTagSlugs: [...new Set([
+        ...existingRelations.map((relation) => relation.tag.slug),
+        ...syncedTags.map((tag) => tag.slug),
+      ].filter(Boolean))],
+    }
   })
 }
 

@@ -4,20 +4,19 @@ import { Readable } from "stream"
 
 import { notFound } from "next/navigation"
 
-import { findLoadedAddonById } from "@/addons-host/runtime/loader"
 import { getSiteSettings } from "@/lib/site-settings"
 import { buildUploadStoragePath } from "@/lib/upload-path"
-import { getUploadMimeType, isAllowedUploadFolder, isSafeUploadSegment } from "@/lib/upload-rules"
+import { getUploadMimeType, isSafeUploadPathSegments } from "@/lib/upload-rules"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-async function resolveUploadFilePath(folder: string, fileName: string) {
+async function resolveUploadFilePath(pathSegments: readonly string[]) {
   const settings = await getSiteSettings()
 
   try {
-    const filePath = buildUploadStoragePath(settings.uploadLocalPath, folder, fileName)
+    const filePath = buildUploadStoragePath(settings.uploadLocalPath, ...pathSegments)
     const fileStat = await stat(filePath)
 
     if (!fileStat.isFile()) {
@@ -42,29 +41,18 @@ function buildUploadHeaders(fileName: string, fileSize: number, lastModified: Da
   }
 }
 
-async function isReadableUploadFolder(folder: string) {
-  if (!isSafeUploadSegment(folder)) {
-    return false
-  }
-
-  if (isAllowedUploadFolder(folder)) {
-    return true
-  }
-
-  const addon = await findLoadedAddonById(folder)
-  return Boolean(addon && addon.enabled && !addon.loadError)
-}
-
-async function readUploadResponse(folder: string, fileName: string) {
-  if (!(await isReadableUploadFolder(folder)) || !isSafeUploadSegment(fileName)) {
+async function readUploadResponse(pathSegments: readonly string[]) {
+  if (!isSafeUploadPathSegments(pathSegments)) {
     notFound()
   }
 
-  const resolvedFilePath = await resolveUploadFilePath(folder, fileName)
+  const resolvedFilePath = await resolveUploadFilePath(pathSegments)
 
   if (!resolvedFilePath) {
     notFound()
   }
+
+  const fileName = pathSegments[pathSegments.length - 1]!
 
   return new Response(Readable.toWeb(createReadStream(resolvedFilePath.filePath)) as ReadableStream<Uint8Array>, {
     headers: buildUploadHeaders(fileName, resolvedFilePath.fileStat.size, resolvedFilePath.fileStat.mtime),
@@ -73,29 +61,30 @@ async function readUploadResponse(folder: string, fileName: string) {
 
 interface UploadRouteProps {
   params: Promise<{
-    folder: string
-    filename: string
+    path: string[]
   }>
 }
 
 export async function GET(_request: Request, props: UploadRouteProps) {
   const params = await props.params
-  return readUploadResponse(params.folder, params.filename)
+  return readUploadResponse(params.path)
 }
 
 export async function HEAD(_request: Request, props: UploadRouteProps) {
   const params = await props.params
-  if (!(await isReadableUploadFolder(params.folder)) || !isSafeUploadSegment(params.filename)) {
+  if (!isSafeUploadPathSegments(params.path)) {
     notFound()
   }
 
-  const resolvedFilePath = await resolveUploadFilePath(params.folder, params.filename)
+  const resolvedFilePath = await resolveUploadFilePath(params.path)
 
   if (!resolvedFilePath) {
     notFound()
   }
 
+  const fileName = params.path[params.path.length - 1]!
+
   return new Response(null, {
-    headers: buildUploadHeaders(params.filename, resolvedFilePath.fileStat.size, resolvedFilePath.fileStat.mtime),
+    headers: buildUploadHeaders(fileName, resolvedFilePath.fileStat.size, resolvedFilePath.fileStat.mtime),
   })
 }

@@ -90,7 +90,7 @@ export async function SiteFooter() {
   const footerBrandingVisible = settings.footerBrandingVisible === undefined || settings.footerBrandingVisible?true:false
 
   return (
-    <footer className="bg-muted/20">
+    <footer>
       <div className="mx-auto max-w-[1200px] px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pb-8 lg:px-1">
         <AddonSlotRenderer slot="layout.footer.before" />
         <AddonSurfaceRenderer surface="layout.footer" props={{ footerBrandingVisible, footerCopyrightText, settings }}>

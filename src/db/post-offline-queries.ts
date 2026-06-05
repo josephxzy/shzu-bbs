@@ -16,6 +16,17 @@ export function findPostOfflineTarget(postId: string, client?: PostOfflineQueryC
       authorId: true,
       status: true,
       title: true,
+      slug: true,
+      board: {
+        select: {
+          slug: true,
+          zone: {
+            select: {
+              slug: true,
+            },
+          },
+        },
+      },
     },
   })
 }
@@ -47,10 +58,21 @@ export function updatePostOfflineTarget(
     },
     select: {
       id: true,
+      authorId: true,
       slug: true,
       title: true,
       status: true,
       reviewNote: true,
+      board: {
+        select: {
+          slug: true,
+          zone: {
+            select: {
+              slug: true,
+            },
+          },
+        },
+      },
     },
   })
 }

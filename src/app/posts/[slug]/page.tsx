@@ -28,7 +28,7 @@ import { BountyPanel, LotteryPanel, PollPanel } from "@/components/post/post-typ
 
 import { SiteHeader } from "@/components/site-header"
 
-import { getAiAgentUserId } from "@/lib/ai-agent"
+import { getAiAgentUserIds } from "@/lib/ai-agent"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/rbutton"
 import { getCurrentUser } from "@/lib/auth"
@@ -147,10 +147,10 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
   const currentPage = Math.max(1, Number(readSearchParam(searchParams?.page) ?? "1") || 1)
 
 
-  const [currentUser, settings, aiAgentUserId] = await Promise.all([
+  const [currentUser, settings, aiAgentUserIds] = await Promise.all([
   getCurrentUser(),
   getSiteSettings(),
-  getAiAgentUserId(),
+  getAiAgentUserIds(),
 ])
 
   const sidebarUserPromise = resolveSidebarUser(currentUser, settings)
@@ -314,7 +314,7 @@ export default async function PostPage(props: PageProps<"/posts/[slug]">) {
     : postWithAuction
   const displayPostWithAiIndicator = {
     ...displayPost,
-    authorIsAiAgent: !displayPost.isAnonymous && displayPost.authorId === aiAgentUserId,
+    authorIsAiAgent: !displayPost.isAnonymous && typeof displayPost.authorId === "number" && aiAgentUserIds.includes(displayPost.authorId),
   }
   const isRestrictedAuthor = displayPostWithAiIndicator.authorStatus === "BANNED" || displayPostWithAiIndicator.authorStatus === "MUTED"
   const currentZone = displayPostWithAiIndicator.boardSlug ? zones.find((zone) => zone.boardSlugs.includes(displayPostWithAiIndicator.boardSlug!)) ?? null : null

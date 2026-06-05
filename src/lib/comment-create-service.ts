@@ -238,6 +238,7 @@ export async function createCommentFlow(input: {
     postSlug: postContext.post.slug,
     boardId: postContext.post.boardId,
     boardSlug: postContext.board.slug,
+    zoneSlug: postContext.zone?.slug,
     postAuthorId: postContext.post.authorId,
     settings,
     created,

@@ -116,6 +116,9 @@ export async function updateCommentFlow(input: {
 
   return {
     updated,
+    postSlug: comment.post.slug,
+    boardSlug: comment.post.board.slug,
+    zoneSlug: comment.post.board.zone?.slug,
     contentSafety,
     contentAdjusted: contentHookAdjusted || contentSafety.wasReplaced,
     mentionUserIds: resolvedComment.mentions.map((item) => item.id),

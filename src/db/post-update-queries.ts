@@ -17,6 +17,11 @@ export function findPostUpdateContext(postId: string) {
       board: {
         select: {
           slug: true,
+          zone: {
+            select: {
+              slug: true,
+            },
+          },
         },
       },
       appendices: {

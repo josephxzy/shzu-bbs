@@ -1,6 +1,6 @@
 import { apiSuccess, createUserRouteHandler, readJsonBody } from "@/lib/api-route"
 import { triggerAiMention } from "@/lib/ai/mention-trigger"
-import { revalidatePostDetailCache } from "@/lib/post-detail-cache"
+import { revalidateUpdatedPostMutation } from "@/lib/content-mutation-revalidation"
 import { logRouteWriteSuccess } from "@/lib/route-metadata"
 import { updatePostFlow } from "@/lib/post-update-service"
 
@@ -20,7 +20,14 @@ export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
     },
   })
 
-  revalidatePostDetailCache({ postId: result.post.id, slug: result.post.slug })
+  revalidateUpdatedPostMutation({
+    postId: result.post.id,
+    postSlug: result.post.slug,
+    boardSlug: result.post.board.slug,
+    zoneSlug: result.post.board.zone?.slug,
+    authorId: result.post.authorId,
+    affectedTagSlugs: result.affectedTagSlugs,
+  })
 
   logRouteWriteSuccess({
     scope: "posts-update",

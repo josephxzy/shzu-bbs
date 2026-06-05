@@ -4,7 +4,7 @@ import { countPostGiftEventsBySenderForCommentIds, listCommentGiftStatsByComment
 import { countPostTipEventsBySenderForCommentIds, findPostTipSupportersByIds, listCommentTipSupportAggregatesByCommentIds } from "@/db/post-tip-queries"
 import { unstable_cache } from "next/cache"
 
-import { getAiAgentUserId } from "@/lib/ai-agent"
+import { getAiAgentUserIds } from "@/lib/ai-agent"
 import { formatRelativeTime } from "@/lib/formatters"
 import type { AnonymousDisplayIdentity } from "@/lib/post-anonymous"
 import {
@@ -345,7 +345,7 @@ async function readCommentsByPostId(
 ): Promise<SiteCommentListResult> {
   const { sort, page, pageSize, viewMode } = normalizeCommentOptions(options)
   try {
-    const aiAgentUserId = await getAiAgentUserId()
+    const aiAgentUserIds = new Set(await getAiAgentUserIds())
 
     const shouldMaskComment = (authorId: number) => {
       if (!viewer?.commentsVisibleToAuthorOnly) {
@@ -459,7 +459,7 @@ async function readCommentsByPostId(
         postId,
         author: displayAsAnonymous ? anonymousCommentIdentity.author : (comment.user.nickname ?? comment.user.username),
         authorIsAnonymous: displayAsAnonymous,
-        authorIsAiAgent: !displayAsAnonymous && comment.userId === aiAgentUserId,
+        authorIsAiAgent: !displayAsAnonymous && aiAgentUserIds.has(comment.userId),
         authorId: comment.userId,
         authorUsername: displayAsAnonymous ? anonymousCommentIdentity.authorUsername : comment.user.username,
         authorAvatarPath: displayAsAnonymous ? anonymousCommentIdentity.authorAvatarPath : comment.user.avatarPath,
@@ -520,7 +520,7 @@ async function readCommentsByPostId(
         postId,
         author: displayAsAnonymous ? anonymousCommentIdentity.author : getUserDisplayName(comment.user),
         authorIsAnonymous: displayAsAnonymous,
-        authorIsAiAgent: !displayAsAnonymous && comment.userId === aiAgentUserId,
+        authorIsAiAgent: !displayAsAnonymous && aiAgentUserIds.has(comment.userId),
         authorId: comment.userId,
         authorUsername: displayAsAnonymous ? anonymousCommentIdentity.authorUsername : comment.user.username,
         authorAvatarPath: displayAsAnonymous ? anonymousCommentIdentity.authorAvatarPath : comment.user.avatarPath,

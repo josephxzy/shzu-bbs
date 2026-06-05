@@ -123,6 +123,21 @@ export function findEditableCommentById(commentId: string) {
       status: true,
       content: true,
       createdAt: true,
+      post: {
+        select: {
+          slug: true,
+          board: {
+            select: {
+              slug: true,
+              zone: {
+                select: {
+                  slug: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   })
 }

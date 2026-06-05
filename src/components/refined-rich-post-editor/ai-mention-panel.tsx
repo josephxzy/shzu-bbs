@@ -85,7 +85,7 @@ function getMentionChoiceKey(choice: MentionChoice) {
 }
 
 export function buildMentionInsertText(choice: MentionChoice) {
-  return `@${choice.username} `
+  return `@${choice.nickname?.trim() || choice.username} `
 }
 
 export function AiMentionPanel({

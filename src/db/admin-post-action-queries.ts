@@ -234,7 +234,17 @@ export function findPostMoveBoardContext(postId: string, boardSlug: string) {
 
     prisma.board.findUnique({
       where: { slug: boardSlug },
-      select: { id: true, slug: true, name: true, status: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        status: true,
+        zone: {
+          select: {
+            slug: true,
+          },
+        },
+      },
     }),
   ])
 }

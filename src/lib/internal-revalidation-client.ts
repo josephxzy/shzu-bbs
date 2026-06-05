@@ -13,12 +13,25 @@ function getInternalSecret() {
     || ""
 }
 
+function getInternalRevalidationOrigin() {
+  const internalOrigin = process.env.INTERNAL_REVALIDATION_ORIGIN?.trim()
+  if (internalOrigin) {
+    return internalOrigin.replace(/\/$/, "")
+  }
+
+  return getConfiguredSiteOrigin()
+}
+
 export async function requestInternalContentRevalidation(payload: InternalRevalidationPayload) {
-  const origin = getConfiguredSiteOrigin()
+  const origin = getInternalRevalidationOrigin()
   const secret = getInternalSecret()
 
-  if (!origin || !secret) {
-    return false
+  if (!origin) {
+    throw new Error("INTERNAL_REVALIDATION_ORIGIN / SITE_URL / APP_URL is not configured")
+  }
+
+  if (!secret) {
+    throw new Error("INTERNAL_REVALIDATION_SECRET / SESSION_SECRET is not configured")
   }
 
   const response = await fetch(new URL("/api/internal/revalidate-content", `${origin}/`), {
@@ -29,6 +42,12 @@ export async function requestInternalContentRevalidation(payload: InternalRevali
     },
     body: JSON.stringify(payload),
   })
+
+  if (!response.ok) {
+    const responseText = await response.text().catch(() => "")
+    const message = responseText.trim().slice(0, 240)
+    throw new Error(`Internal content revalidation failed with HTTP ${response.status}${message ? `: ${message}` : ""}`)
+  }
 
   return response.ok
 }

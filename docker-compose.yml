@@ -119,7 +119,9 @@ services:
     <<: *app-service
     restart: unless-stopped
     stop_grace_period: 30s
-    environment: *app-environment
+    environment:
+      <<: *app-environment
+      INTERNAL_REVALIDATION_ORIGIN: ${INTERNAL_REVALIDATION_ORIGIN:-http://web:${PORT:-3000}}
     depends_on:
       postgres:
         condition: service_healthy

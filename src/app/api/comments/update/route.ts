@@ -1,7 +1,7 @@
 import { apiSuccess, createUserRouteHandler, readJsonBody } from "@/lib/api-route"
 import { triggerAiMention } from "@/lib/ai/mention-trigger"
+import { revalidateUpdatedCommentMutation } from "@/lib/content-mutation-revalidation"
 import { updateCommentFlow } from "@/lib/comment-update-service"
-import { revalidatePostCommentCache } from "@/lib/post-detail-cache"
 import { logRequestSucceeded } from "@/lib/request-log"
 
 export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
@@ -27,7 +27,12 @@ export const POST = createUserRouteHandler(async ({ request, currentUser }) => {
     contentAdjusted: result.contentAdjusted,
   })
 
-  revalidatePostCommentCache({ postId: result.updated.postId })
+  revalidateUpdatedCommentMutation({
+    postId: result.updated.postId,
+    postSlug: result.postSlug,
+    boardSlug: result.boardSlug,
+    zoneSlug: result.zoneSlug,
+  })
 
   void triggerAiMention({
     kind: "comment",

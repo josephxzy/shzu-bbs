@@ -32,7 +32,7 @@ import { formatDateTime, formatNumber, serializeDate } from "@/lib/formatters"
 import { canViewUserProfileVisibility } from "@/lib/user-profile-settings"
 import { buildUserProfileRadarData } from "@/lib/user-profile-radar"
 import { VipDisplayName } from "@/components/vip/vip-display-name"
-import { getAiAgentUserId } from "@/lib/ai-agent"
+import { getAiAgentUserIds } from "@/lib/ai-agent"
 import { getCurrentUser } from "@/lib/auth"
 import { getBadgeEligibilitySnapshot, getGrantedBadgesForUser } from "@/lib/badges"
 import { getBoards } from "@/lib/boards"
@@ -190,7 +190,7 @@ export default async function UserPage(props: PageProps<"/users/[username]">) {
   const postsPage = parsePageParam(searchParams?.postsPage)
   const repliesPage = parsePageParam(searchParams?.repliesPage)
   const activityTab = resolveUserActivityTab(readSearchParam(searchParams?.tab), { postsPage, repliesPage })
-  const [user, settings, currentUser, aiAgentUserId, boards, zones] = await Promise.all([getUserProfile(params.username), getSiteSettings(), getCurrentUser(), getAiAgentUserId(), getBoards(), getZones()])
+  const [user, settings, currentUser, aiAgentUserIds, boards, zones] = await Promise.all([getUserProfile(params.username), getSiteSettings(), getCurrentUser(), getAiAgentUserIds(), getBoards(), getZones()])
 
   if (!user) {
     notFound()
@@ -281,7 +281,7 @@ export default async function UserPage(props: PageProps<"/users/[username]">) {
 
   const canToggleFollow = (!currentUser || currentUser.id !== user.id) && !profileAccess.relation.isBlocked
   const isAnonymousMaskUser = settings.anonymousPostMaskUserId === user.id
-  const isAiAgentUser = aiAgentUserId === user.id
+  const isAiAgentUser = aiAgentUserIds.includes(user.id)
   const profileRadarData = buildUserProfileRadarData({
     user,
     snapshot: radarSnapshot,

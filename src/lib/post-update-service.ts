@@ -248,7 +248,7 @@ export async function updatePostFlow(input: {
       })
     })
 
-    await syncPostTaxonomy(input.postId, titleSafety.sanitizedText, finalContent, sanitizedManualTags)
+    const taxonomyResult = await syncPostTaxonomy(input.postId, titleSafety.sanitizedText, finalContent, sanitizedManualTags)
     const updatedPost = (await queryAddonPosts({
       ids: [input.postId],
       statuses: ["NORMAL", "PENDING", "LOCKED", "OFFLINE"],
@@ -276,6 +276,7 @@ export async function updatePostFlow(input: {
       mode: "edit" as const,
       contentAdjusted,
       mentionUserIds,
+      affectedTagSlugs: taxonomyResult.affectedTagSlugs,
     }
   }
 
@@ -367,5 +368,6 @@ export async function updatePostFlow(input: {
     mode: "append" as const,
     contentAdjusted: appendHookAdjusted || appendSafety.wasReplaced,
     mentionUserIds,
+    affectedTagSlugs: [] as string[],
   }
 }

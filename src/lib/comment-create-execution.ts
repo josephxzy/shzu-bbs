@@ -111,6 +111,7 @@ export async function executeCommentCreation(body: unknown, options: ExecuteComm
       postId: result.postId,
       postSlug: result.postSlug,
       boardSlug: result.boardSlug,
+      zoneSlug: result.zoneSlug,
       authorId: author.id,
     })
     void recordApprovedCommentTaskEvent({

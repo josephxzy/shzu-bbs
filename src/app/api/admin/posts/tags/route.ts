@@ -1,12 +1,8 @@
-import { revalidatePath } from "next/cache"
-
 import { replacePostTags } from "@/db/post-taxonomy-queries"
 import { apiError, apiSuccess, createAdminRouteHandler, readJsonBody, requireStringField } from "@/lib/api-route"
 import { getRequestIp, writeAdminLog } from "@/lib/admin"
-import { revalidateContentListCaches } from "@/lib/content-list-cache"
+import { revalidateUpdatedPostMutation } from "@/lib/content-mutation-revalidation"
 import { ensureCanManagePost } from "@/lib/moderator-permissions"
-import { revalidatePostDetailCache } from "@/lib/post-detail-cache"
-import { expireTaxonomyCacheImmediately } from "@/lib/taxonomy-cache"
 
 export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
   const body = await readJsonBody(request)
@@ -30,14 +26,14 @@ export const POST = createAdminRouteHandler(async ({ request, adminUser }) => {
     requestIp,
   )
 
-  revalidatePostDetailCache({ postId: post.id, slug: post.slug })
-  revalidateContentListCaches()
-  expireTaxonomyCacheImmediately()
-  revalidatePath(`/posts/${post.slug}`)
-  revalidatePath("/tags")
-  for (const tagSlug of result.affectedTagSlugs) {
-    revalidatePath(`/tags/${tagSlug}`)
-  }
+  revalidateUpdatedPostMutation({
+    postId: post.id,
+    postSlug: post.slug,
+    boardSlug: post.board.slug,
+    zoneSlug: post.board.zone?.slug,
+    authorId: post.authorId,
+    affectedTagSlugs: result.affectedTagSlugs,
+  })
 
   return apiSuccess({ tags: result.tags }, "标签已更新")
 }, {

@@ -58,6 +58,11 @@ export function isSafeUploadSegment(value: string) {
   return /^[a-zA-Z0-9._-]+$/.test(value) && !value.includes("..")
 }
 
+export function isSafeUploadPathSegments(value: readonly string[]) {
+  return value.length > 0
+    && value.every((segment) => segment !== "." && segment !== ".." && isSafeUploadSegment(segment))
+}
+
 export function getUploadMimeType(fileName: string) {
   return MIME_TYPE_BY_EXTENSION[normalizeUploadExtension(fileName)] ?? "application/octet-stream"
 }

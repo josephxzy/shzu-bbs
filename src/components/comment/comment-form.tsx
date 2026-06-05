@@ -82,7 +82,7 @@ export function CommentForm({ postId, commentId, initialContent = "", mode = "cr
     ? `本次回复仅 ${privateReplyRecipient.displayName} 和你本人可见。`
     : commentsVisibleToAuthorOnly
     ? "当前帖子开启了评论仅楼主可见，你的评论仅楼主、管理员和你自己可见。"
-    : "可使用 @用户名 提及他人。"
+    : "可使用 @昵称/用户名 提及他人。"
   const primaryShortcutKey = shortcutPlatform === "mac" ? "Cmd" : "Ctrl"
   const formClassName = compact
     ? "min-w-0 w-full max-w-full flex flex-col gap-3 overflow-x-hidden rounded-[18px] border border-border bg-card p-4"
@@ -215,7 +215,7 @@ export function CommentForm({ postId, commentId, initialContent = "", mode = "cr
         minHeight={compact ? 120 : 180}
         uploadFolder="comments"
         markdownEmojiMap={markdownEmojiMap}
-        placeholder={mode === "edit" ? `修改评论内容…可在 ${editWindowMinutes} 分钟内编辑` : replyToUserName ? `回复 @${replyToUserName}…` : "写下你的回复…支持 @用户名 提及"}
+        placeholder={mode === "edit" ? `修改评论内容…可在 ${editWindowMinutes} 分钟内编辑` : replyToUserName ? `回复 @${replyToUserName}…` : "写下你的回复…支持 @昵称/用户名 提及"}
         shellClassName={embedded ? "rounded-none border-0 bg-transparent shadow-none" : undefined}
         privateReplyPostId={postId}
         privateReplyRecipient={mode === "create" ? privateReplyRecipient : null}

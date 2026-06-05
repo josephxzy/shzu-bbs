@@ -540,7 +540,7 @@ export async function createPostFlow(body: unknown, options: CreatePostFlowOptio
     apiError(500, "帖子 slug 生成失败，请稍后再试")
   }
 
-  await syncPostTaxonomy(post.id, titleSafety.sanitizedText, serializedContent, sanitizedManualTags)
+  const taxonomyResult = await syncPostTaxonomy(post.id, titleSafety.sanitizedText, serializedContent, sanitizedManualTags)
 
   if (createdAuction?.status === "ACTIVE") {
     await enqueuePostAuctionSettlement(createdAuction.id, createdAuction.endsAt)
@@ -550,9 +550,11 @@ export async function createPostFlow(body: unknown, options: CreatePostFlowOptio
     post,
     author,
     boardSlug: boardContext.board.slug,
+    zoneSlug: boardContext.zone?.slug,
     auction: createdAuction,
     shouldPending,
     contentAdjusted,
     mentionUserIds,
+    affectedTagSlugs: taxonomyResult.affectedTagSlugs,
   }
 }

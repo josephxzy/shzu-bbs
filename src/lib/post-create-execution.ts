@@ -12,7 +12,6 @@ import { enqueueNewPostFollowNotifications } from "@/lib/follow-notifications"
 import { enqueueEvaluateUserLevelProgress } from "@/lib/level-system"
 import { logRouteWriteSuccess } from "@/lib/route-metadata"
 import { recordApprovedPostTaskEvent } from "@/lib/task-center-service"
-import { expireTaxonomyCacheImmediately } from "@/lib/taxonomy-cache"
 import { createPostFlow, type PostCreateStatusMode } from "@/lib/post-create-service"
 import { revalidateUserSurfaceCache } from "@/lib/user-surface"
 import { getCurrentUserRecord } from "@/db/current-user"
@@ -102,9 +101,10 @@ export async function executePostCreation(body: unknown, options: ExecutePostCre
       postId: result.post.id,
       postSlug: result.post.slug,
       boardSlug: result.boardSlug,
+      zoneSlug: result.zoneSlug,
       authorId: result.author.id,
+      affectedTagSlugs: result.affectedTagSlugs,
     })
-    expireTaxonomyCacheImmediately()
     void recordApprovedPostTaskEvent({
       type: "APPROVED_POST",
       userId: result.author.id,
