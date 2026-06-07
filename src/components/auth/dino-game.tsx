@@ -12,7 +12,23 @@ declare global {
 }
 
 const SCRIPT_ID = "auth-dino-bundle"
+const SAFE_STYLE_ID = "auth-dino-safe-style"
 let scriptLoader: Promise<NonNullable<Window["AuthDinoGame"]>> | null = null
+
+function ensureSafeStyleSheet() {
+  if (typeof document === "undefined") {
+    return
+  }
+
+  if (document.getElementById(SAFE_STYLE_ID)) {
+    return
+  }
+
+  const style = document.createElement("style")
+  style.id = SAFE_STYLE_ID
+  // 插入到 <head> 最前面，成为 document.styleSheets[0]，确保同源可访问
+  document.head.insertBefore(style, document.head.firstChild)
+}
 
 function loadDinoGameScript() {
   if (typeof window === "undefined") {
@@ -77,6 +93,9 @@ export function DinoGame() {
     }
 
     host.id = `auth-dino-${hostId}`
+
+    // 确保 document.styleSheets[0] 是同源可访问的样式表，解决 CDN 跨域导致的 SecurityError
+    ensureSafeStyleSheet()
 
     void loadDinoGameScript()
       .then((game) => {
