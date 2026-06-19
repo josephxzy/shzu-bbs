@@ -241,6 +241,8 @@ export interface SiteSecuritySettings {
   passwordChangeRequireEmailVerification: boolean
   oauthServerEnabled: boolean
   oauthClientApplicationEnabled: boolean
+  paymentApplicationEnabled: boolean
+  paymentPlatformFeePercent: number
   oauthAccessTokenTtlMinutes: number
   oauthRefreshTokenTtlDays: number
 }
